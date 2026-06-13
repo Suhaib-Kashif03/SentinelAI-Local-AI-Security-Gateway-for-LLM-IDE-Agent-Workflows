@@ -1,4 +1,4 @@
-from typing import List, Literal
+from typing import List, Literal, Optional
 from pydantic import BaseModel, Field
 
 
@@ -29,3 +29,10 @@ class ScanResponse(BaseModel):
     categories: List[str]
     reasons: List[str]
     matched_rules: List[RuleMatch]
+
+
+class CommandScanResponse(ScanResponse):
+    command: str
+    detected_shell: Optional[str] = None
+    command_chain_detected: bool = False
+    explanation: str

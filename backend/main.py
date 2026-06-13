@@ -1,13 +1,14 @@
 from fastapi import FastAPI
 
-from backend.models import ScanRequest, ScanResponse
+from backend.models import ScanRequest, ScanResponse, CommandScanResponse
 from backend.scanner import scan_text
+from backend.command_analyzer import analyze_command
 
 
 app = FastAPI(
     title="SentinelAI",
     description="Local AI Security Gateway for scanning prompts, LLM responses, code, and commands.",
-    version="0.1.0"
+    version="0.2.0"
 )
 
 
@@ -15,6 +16,7 @@ app = FastAPI(
 def root():
     return {
         "project": "SentinelAI",
+        "version": "0.2.0",
         "status": "running",
         "message": "Local AI Security Gateway API is active."
     }
@@ -46,4 +48,14 @@ def scan_response(request: ScanRequest):
     return scan_text(
         content=request.content,
         input_type="response"
+    )
+
+
+@app.post("/scan/command", response_model=CommandScanResponse)
+def scan_command(request: ScanRequest):
+    """
+    Analyze a terminal command before execution.
+    """
+    return analyze_command(
+        command=request.content
     )

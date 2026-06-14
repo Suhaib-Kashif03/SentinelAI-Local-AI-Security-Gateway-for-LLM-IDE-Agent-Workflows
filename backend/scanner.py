@@ -3,6 +3,7 @@ from typing import Dict, List, Tuple
 
 from backend.models import RuleMatch, ScanResponse
 from backend.secret_detector import find_secret_rule_matches
+from backend.policy_engine import decide_by_policy
 
 
 RULES = [
@@ -227,30 +228,14 @@ def calculate_risk_score(matches: List[RuleMatch]) -> int:
 
 def decide(risk_score: int, matches: List[RuleMatch]) -> str:
     """
-    Convert risk score and rule categories into a decision.
+    Convert scanner results into a policy-based decision.
     """
-    critical_categories = {
-        "SECRET_LEAKAGE",
-        "DESTRUCTIVE_COMMAND",
-        "UNSAFE_NETWORK_EXECUTION",
-        "NETWORK_EXFILTRATION"
-    }
-
     matched_categories = {match.category for match in matches}
 
-    if risk_score >= 80:
-        return "BLOCK"
-
-    if matched_categories.intersection(critical_categories) and risk_score >= 70:
-        return "BLOCK"
-
-    if risk_score >= 50:
-        return "REQUIRE_APPROVAL"
-
-    if risk_score >= 21:
-        return "WARN"
-
-    return "ALLOW"
+    return decide_by_policy(
+        risk_score=risk_score,
+        categories=matched_categories
+    )
 
 
 def scan_text(content: str, input_type: str) -> ScanResponse:

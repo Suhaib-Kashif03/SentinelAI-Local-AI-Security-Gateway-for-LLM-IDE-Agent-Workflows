@@ -4,12 +4,13 @@ from backend.models import ScanRequest, ScanResponse, CommandScanResponse, Secre
 from backend.scanner import scan_text
 from backend.command_analyzer import analyze_command
 from backend.secret_detector import scan_secrets
+from backend.policy_engine import get_policy_summary
 
 
 app = FastAPI(
     title="SentinelAI",
     description="Local AI Security Gateway for scanning prompts, LLM responses, code, commands, and secrets.",
-    version="0.3.0"
+    version="0.4.0"
 )
 
 
@@ -17,7 +18,7 @@ app = FastAPI(
 def root():
     return {
         "project": "SentinelAI",
-        "version": "0.3.0",
+        "version": "0.4.0",
         "status": "running",
         "message": "Local AI Security Gateway API is active."
     }
@@ -28,6 +29,14 @@ def health_check():
     return {
         "status": "healthy"
     }
+
+
+@app.get("/policy")
+def view_active_policy():
+    """
+    View the currently loaded SentinelAI security policy.
+    """
+    return get_policy_summary()
 
 
 @app.post("/scan/prompt", response_model=ScanResponse)

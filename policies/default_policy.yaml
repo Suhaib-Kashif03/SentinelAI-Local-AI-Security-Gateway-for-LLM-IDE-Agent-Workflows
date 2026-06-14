@@ -1,0 +1,68 @@
+policy_name: default_policy
+version: 1.0
+description: Default security policy for SentinelAI local AI security gateway.
+
+mode: default
+
+thresholds:
+  allow_max_score: 20
+  warn_min_score: 21
+  require_approval_min_score: 50
+  block_min_score: 80
+
+category_actions:
+  PROMPT_INJECTION: BLOCK
+  JAILBREAK: REQUIRE_APPROVAL
+  SECRET_LEAKAGE: BLOCK
+  DESTRUCTIVE_COMMAND: BLOCK
+  UNSAFE_NETWORK_EXECUTION: BLOCK
+  NETWORK_EXFILTRATION: BLOCK
+  SECURITY_CONTROL_DISABLE: BLOCK
+  PRIVILEGE_ESCALATION: REQUIRE_APPROVAL
+  PACKAGE_INSTALLATION: REQUIRE_APPROVAL
+  SYSTEM_RECONNAISSANCE: WARN
+  NETWORK_RECONNAISSANCE: WARN
+  UNSAFE_CODE: REQUIRE_APPROVAL
+  CONTAINER_ESCAPE_RISK: BLOCK
+  UNKNOWN_RISK: WARN
+
+rules:
+  block_prompt_injection: true
+  block_secret_leakage: true
+  block_destructive_commands: true
+  block_remote_script_execution: true
+  block_network_exfiltration: true
+  block_security_control_disable: true
+  require_approval_for_privileged_commands: true
+  require_approval_for_package_installation: true
+  warn_on_reconnaissance: true
+  log_all_events: true
+
+redaction:
+  mask_detected_secrets: true
+  show_secret_type: true
+  show_secret_position: true
+  return_raw_secret: false
+
+command_controls:
+  block_rm_rf_root: true
+  block_private_key_access: true
+  block_env_dump: true
+  block_curl_pipe_shell: true
+  block_security_tool_disable: true
+  require_approval_for_sudo: true
+  require_approval_for_package_managers: true
+
+llm_controls:
+  scan_user_prompt_before_llm: true
+  scan_llm_response_before_display: true
+  block_prompt_injection_before_llm: true
+  block_secret_leakage_to_llm: true
+  block_unsafe_generated_commands: true
+
+audit:
+  enabled: true
+  log_allowed_events: true
+  log_warned_events: true
+  log_blocked_events: true
+  log_approval_required_events: true

@@ -2,6 +2,7 @@ import re
 from typing import List, Optional
 
 from backend.models import RuleMatch, SecretMatch, SecretScanResponse
+from backend.policy_engine import decide_by_policy
 
 
 SECRET_PATTERNS = [
@@ -219,21 +220,14 @@ def calculate_secret_risk_score(secrets: List[SecretMatch]) -> int:
 
 def decide_secret_scan(risk_score: int, secrets: List[SecretMatch]) -> str:
     """
-    Decide action for secret scan.
+    Convert secret scan results into a policy-based decision.
     """
-    if not secrets:
-        return "ALLOW"
+    categories = {"SECRET_LEAKAGE"} if secrets else set()
 
-    if risk_score >= 80:
-        return "BLOCK"
-
-    if risk_score >= 50:
-        return "REQUIRE_APPROVAL"
-
-    if risk_score >= 21:
-        return "WARN"
-
-    return "ALLOW"
+    return decide_by_policy(
+        risk_score=risk_score,
+        categories=categories
+    )
 
 
 def scan_secrets(content: str, input_type: str = "secrets") -> SecretScanResponse:

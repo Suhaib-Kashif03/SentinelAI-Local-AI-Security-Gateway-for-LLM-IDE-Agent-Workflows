@@ -3,6 +3,7 @@ from typing import List, Optional
 
 from backend.models import CommandScanResponse, RuleMatch
 from backend.secret_detector import find_secret_rule_matches
+from backend.policy_engine import decide_by_policy
 
 
 COMMAND_RULES = [
@@ -296,40 +297,14 @@ def calculate_command_risk_score(matches: List[RuleMatch], command_chain_detecte
 
 def decide_command(risk_score: int, matches: List[RuleMatch]) -> str:
     """
-    Decide what should happen with the command.
+    Convert command analysis results into a policy-based decision.
     """
     categories = {match.category for match in matches}
 
-    block_categories = {
-        "DESTRUCTIVE_COMMAND",
-        "UNSAFE_NETWORK_EXECUTION",
-        "NETWORK_EXFILTRATION",
-        "SECURITY_CONTROL_DISABLE"
-    }
-
-    approval_categories = {
-        "PRIVILEGE_ESCALATION",
-        "SECRET_LEAKAGE",
-        "PACKAGE_INSTALLATION",
-        "CONTAINER_ESCAPE_RISK"
-    }
-
-    if categories.intersection(block_categories):
-        return "BLOCK"
-
-    if risk_score >= 80:
-        return "BLOCK"
-
-    if categories.intersection(approval_categories):
-        return "REQUIRE_APPROVAL"
-
-    if risk_score >= 50:
-        return "REQUIRE_APPROVAL"
-
-    if risk_score >= 21:
-        return "WARN"
-
-    return "ALLOW"
+    return decide_by_policy(
+        risk_score=risk_score,
+        categories=categories
+    )
 
 
 def build_explanation(decision: str, risk_score: int, matches: List[RuleMatch], command_chain_detected: bool) -> str:

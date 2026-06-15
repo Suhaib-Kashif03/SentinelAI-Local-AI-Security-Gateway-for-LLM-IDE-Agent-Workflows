@@ -120,10 +120,11 @@ page = st.sidebar.radio(
         "Overview",
         "Live Scanner",
         "Secure LLM Chat",
+        "Agent Simulator",
         "Audit Events",
         "Policy",
-        "Project Evidence",
-        "Agent Simulator"
+        "Evaluation",
+        "Project Evidence"
     ]
 )
 
@@ -541,6 +542,93 @@ elif page == "Policy":
         st.subheader("Full Policy Summary")
         show_json_block(policy)
 
+
+# ---------------------------------------------------------
+# Page: Evaluation
+# ---------------------------------------------------------
+
+elif page == "Evaluation":
+    st.title("📊 Evaluation Report")
+    st.caption("View SentinelAI testing results and detection coverage.")
+
+    evaluation_path = "evaluation/evaluation_results.json"
+    report_path = "evaluation/evaluation_report.md"
+
+    try:
+        with open(evaluation_path, "r", encoding="utf-8") as file:
+            evaluation = json.load(file)
+
+        col1, col2, col3, col4 = st.columns(4)
+
+        col1.metric("Total Tests", evaluation.get("total_tests", 0))
+        col2.metric("Passed", evaluation.get("passed", 0))
+        col3.metric("Failed", evaluation.get("failed", 0))
+        col4.metric("Pass Rate", f'{evaluation.get("pass_rate_percent", 0)}%')
+
+        st.divider()
+
+        col_left, col_right = st.columns(2)
+
+        with col_left:
+            st.subheader("Decision Breakdown")
+            decision_counts = evaluation.get("decision_counts", {})
+
+            if decision_counts:
+                decision_df = pd.DataFrame(
+                    list(decision_counts.items()),
+                    columns=["Decision", "Count"]
+                )
+                st.bar_chart(decision_df.set_index("Decision"))
+
+        with col_right:
+            st.subheader("Error Breakdown")
+            error_counts = evaluation.get("error_counts", {})
+
+            if error_counts:
+                error_df = pd.DataFrame(
+                    list(error_counts.items()),
+                    columns=["Error Type", "Count"]
+                )
+                st.bar_chart(error_df.set_index("Error Type"))
+
+        st.subheader("Category Coverage")
+        category_counts = evaluation.get("category_counts", {})
+
+        if category_counts:
+            category_df = pd.DataFrame(
+                sorted(category_counts.items()),
+                columns=["Category", "Count"]
+            )
+            st.dataframe(
+                category_df,
+                use_container_width=True,
+                hide_index=True
+            )
+
+        st.subheader("Full Test Results")
+        results = evaluation.get("results", [])
+
+        if results:
+            results_df = pd.DataFrame(results)
+            st.dataframe(
+                results_df,
+                use_container_width=True,
+                hide_index=True
+            )
+
+        st.subheader("Markdown Report")
+
+        with open(report_path, "r", encoding="utf-8") as file:
+            report = file.read()
+
+        st.markdown(report)
+
+    except FileNotFoundError:
+        st.warning(
+            "Evaluation results not found. Run this command first:"
+        )
+        st.code("python evaluation/run_evaluation.py")
+        
 
 # ---------------------------------------------------------
 # Page: Project Evidence

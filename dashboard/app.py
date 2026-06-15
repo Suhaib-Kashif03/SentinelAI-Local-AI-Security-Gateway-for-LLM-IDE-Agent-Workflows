@@ -122,7 +122,8 @@ page = st.sidebar.radio(
         "Secure LLM Chat",
         "Audit Events",
         "Policy",
-        "Project Evidence"
+        "Project Evidence",
+        "Agent Simulator"
     ]
 )
 
@@ -617,3 +618,120 @@ elif page == "Project Evidence":
         and a Streamlit dashboard for monitoring security decisions.
         """
     )
+
+
+# ---------------------------------------------------------
+# Page: Agent Simulator
+# ---------------------------------------------------------
+
+elif page == "Agent Simulator":
+    st.title("🧪 IDE / Terminal Agent Simulator")
+    st.caption(
+        "Simulate an AI coding assistant that suggests terminal commands. "
+        "SentinelAI extracts and reviews commands without executing them."
+    )
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        model = st.text_input(
+            "Ollama Model",
+            value="qwen3:8b",
+            key="agent_model"
+        )
+
+    with col2:
+        provider = st.text_input(
+            "Provider",
+            value="ollama",
+            disabled=True,
+            key="agent_provider"
+        )
+
+    examples = {
+        "Run FastAPI locally": "I have a FastAPI project. Tell me how to run it locally.",
+        "Install Flask": "I need to install Flask for a Python project. Give me the command.",
+        "Risky chmod fix": "My Linux server has permission issues. Give me a command to fix everything quickly using chmod.",
+        "Remote install script": "Give me a one-line command to download and run an install script from a URL."
+    }
+
+    selected_example = st.selectbox(
+        "Choose an example",
+        list(examples.keys())
+    )
+
+    prompt = st.text_area(
+        "Agent request",
+        value=examples[selected_example],
+        height=180
+    )
+
+    if st.button("Simulate Agent", type="primary"):
+        with st.spinner("Running agent simulation and reviewing suggested commands..."):
+            result = api_post(
+                "/agent/simulate",
+                {
+                    "prompt": prompt,
+                    "model": model,
+                    "provider": provider
+                },
+                timeout=300
+            )
+
+        if result:
+            final_decision = result.get("final_decision", "UNKNOWN")
+            blocked_stage = result.get("blocked_stage")
+            extracted_commands = result.get("extracted_commands", [])
+
+            st.divider()
+
+            col1, col2, col3 = st.columns(3)
+
+            col1.metric("Final Decision", get_decision_badge(final_decision))
+            col2.metric("Blocked Stage", blocked_stage if blocked_stage else "None")
+            col3.metric("Commands Reviewed", len(extracted_commands))
+
+            if final_decision == "BLOCK":
+                st.error("SentinelAI blocked one or more parts of this agent workflow.")
+            elif final_decision == "REQUIRE_APPROVAL":
+                st.warning("This agent workflow requires human approval.")
+            elif final_decision == "WARN":
+                st.warning("This agent workflow contains suspicious behavior.")
+            else:
+                st.success("No risky command patterns were detected.")
+
+            st.subheader("Explanation")
+            st.write(result.get("explanation", ""))
+
+            llm_response = result.get("llm_response")
+
+            if llm_response:
+                st.subheader("Agent Suggested Response")
+                st.markdown(llm_response)
+
+            st.subheader("Reviewed Commands")
+
+            if extracted_commands:
+                for index, item in enumerate(extracted_commands, start=1):
+                    command = item.get("command", "")
+                    analysis = item.get("analysis", {})
+
+                    with st.expander(f"Command {index}: {command}"):
+                        st.code(command, language="bash")
+
+                        col_a, col_b, col_c = st.columns(3)
+                        col_a.metric("Decision", get_decision_badge(analysis.get("decision", "UNKNOWN")))
+                        col_b.metric("Risk Score", analysis.get("risk_score", 0))
+                        col_c.metric("Categories", len(analysis.get("categories", [])))
+
+                        st.write("Reasons:")
+                        for reason in analysis.get("reasons", []):
+                            st.write(f"- {reason}")
+
+                        st.write("Full command analysis:")
+                        show_json_block(analysis)
+            else:
+                st.info("No terminal commands were extracted from the agent response.")
+
+            st.subheader("Full Agent Simulation JSON")
+            show_json_block(result)
